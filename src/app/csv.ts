@@ -212,10 +212,11 @@ export function parseCsvToInitiatives(
       outcome: "success",
       initiatives: initiatives,
     };
-  } catch (error) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return {
       outcome: "error",
-      error: `Error processing CSV data: ${error.message}`,
+      error: `Error processing CSV data: ${errorMessage}`,
     };
   }
 }

@@ -5,7 +5,7 @@
  * @param {Date} endDate - The end date.
  * @returns {number} The number of working days.
  */
-export function calculateWorkingDays(startDate, endDate) {
+export function calculateWorkingDays(startDate: Date, endDate: Date): number {
   if (
     !startDate ||
     !endDate ||
@@ -36,7 +36,7 @@ export function calculateWorkingDays(startDate, endDate) {
  * @param {number} days - The number of working days to add.
  * @returns {Date} The new date.
  */
-export function addWorkingDays(startDate, days) {
+export function addWorkingDays(startDate: Date, days: number): Date {
   if (isNaN(days) || days <= 0) {
     return new Date(startDate);
   }
@@ -53,7 +53,7 @@ export function addWorkingDays(startDate, days) {
   return curDate;
 }
 
-export function getToday() {
+export function getToday(): Date {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   return today;

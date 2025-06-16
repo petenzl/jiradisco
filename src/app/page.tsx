@@ -28,7 +28,14 @@ import { useDropzone } from "react-dropzone";
 import { sampleCSVData } from "./sample-data";
 
 // --- React Components ---
-const CustomTooltip = ({ active, payload, label }) => {
+// Define tooltip props with more specific types
+type TooltipProps = {
+  active: boolean;
+  payload?: Array<{payload: InitiativesForMonth}>;
+  label: string;
+};
+
+const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
@@ -50,7 +57,7 @@ const CustomTooltip = ({ active, payload, label }) => {
             Initiatives due this month:
           </h4>
           <ul className="list-disc list-inside text-xs text-gray-500">
-            {data.initiatives.map((i) => (
+            {data.initiatives.map((i: Initiative) => (
               <li key={i.name}>{i.name}</li>
             ))}
           </ul>
@@ -95,7 +102,7 @@ const AllInitiativesView = ({
 
     const rows = initiatives.map((i) => {
       // Function to safely wrap a value in quotes for CSV
-      const escapeCsv = (val) => {
+      const escapeCsv = (val: string | number | null | undefined) => {
         if (val === null || val === undefined) return "";
         const str = String(val);
         if (str.includes(",") || str.includes('"') || str.includes("\n")) {
@@ -485,13 +492,17 @@ function JiraCapacityPlanner() {
   const [data, setData] = useState<InitiativesForMonth[]>([]);
   const [fileName, setFileName] = useState<string>();
   const [error, setError] = useState<string>();
-  const [selectedMonthData, setSelectedMonthData] = useState(null);
+  const [selectedMonthData, setSelectedMonthData] = useState<InitiativesForMonth | null>(null);
   const [page, setPage] = useState("home");
   const [allInitiatives, setAllInitiatives] = useState<Initiative[]>([]);
 
   const TEAM_CAPACITY_PER_MONTH = 120;
 
-  const handleBarClick = (data) => {
+  type BarClickData = {
+    activePayload?: Array<{payload: InitiativesForMonth}>;
+  };
+
+  const handleBarClick = (data: BarClickData) => {
     if (data && data.activePayload && data.activePayload.length > 0) {
       setSelectedMonthData(data.activePayload[0].payload);
     }
@@ -531,7 +542,7 @@ function JiraCapacityPlanner() {
   }, []);
 
   const onDrop = useCallback(
-    (acceptedFiles) => {
+    (acceptedFiles: File[]) => {
       const file = acceptedFiles[0];
       if (file) {
         setFileName(file.name);
@@ -694,11 +705,12 @@ function JiraCapacityPlanner() {
                           tick={{ fontSize: 12 }}
                         />
                         <Tooltip
-                          content={({ active, payload, label }) => (
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                          content={(props: any) => (
                             <CustomTooltip
-                              active={active}
-                              payload={payload}
-                              label={label}
+                              active={props.active || false}
+                              payload={props.payload}
+                              label={props.label || ''}
                             />
                           )}
                           cursor={{ fill: "rgba(239, 246, 255, 0.5)" }}
