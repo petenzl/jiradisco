@@ -12,7 +12,7 @@ export type Initiative = {
   targetDate: Date;
 
   /** The projected finish date of the initiative, in an ISO 8601 string format. */
-  projectedFinishDate: string;
+  projectedFinishDate: Date;
 
   /** The amount of work that has been completed (e.g., story points, hours). */
   doneWork: number;
