@@ -2,6 +2,8 @@
 
 A tool for importing CSV files from JIRA to visualize team capacity and workload distribution.
 
+You can find the latest publish version of the tool here: https://petenzl.github.io/jiradisco/
+
 ## Purpose
 
 This project provides an interface for uploading and parsing JIRA CSV exports, then visualizing team capacity and workload to aid in sprint planning and resource allocation.
