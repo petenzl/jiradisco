@@ -7,6 +7,10 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
 
     steps:
       - name: Checkout 🛎️
@@ -16,10 +20,63 @@ jobs:
         uses: ./.github/workflows/setup-node
 
       - name: TypeScript Check 🔍
-        run: npm run typecheck
+        id: typecheck
+        run: |
+          npm run typecheck 2>&1 | tee typecheck-output.log || true
+          echo "Generating typecheck report..."
+          echo '<?xml version="1.0" encoding="UTF-8"?>' > tsc-output.xml
+          echo '<testsuites name="tsc">' >> tsc-output.xml
+          echo '  <testsuite name="TypeScript" tests="1" failures="0" errors="0" skipped="0">' >> tsc-output.xml
+          if grep -q "error TS" typecheck-output.log; then
+            failures=$(grep -c "error TS" typecheck-output.log || echo "0")
+            echo "    <testcase name=\"TypeScript Compilation\"><failure message=\"Found $failures type errors\">$(cat typecheck-output.log | grep -E "error TS" | sed 's/</\&lt;/g' | sed 's/>/\&gt;/g')</failure></testcase>" >> tsc-output.xml
+            echo "  </testsuite>" >> tsc-output.xml
+            echo "</testsuites>" >> tsc-output.xml
+            exit 1
+          else
+            echo '    <testcase name="TypeScript Compilation"/>' >> tsc-output.xml
+            echo '  </testsuite>' >> tsc-output.xml
+            echo '</testsuites>' >> tsc-output.xml
+          fi
 
-      - name: Lint 🧹
-        run: npm run lint
+      - name: Report TypeScript Check Results
+        uses: mikepenz/action-junit-report@v4
+        if: always()
+        with:
+          report_paths: 'tsc-output.xml'
+          fail_on_failure: false
+          require_tests: false
+          check_name: TypeScript Results
 
-      - name: Test 🧪
-        run: npm run test
+      - name: ESLint Check 🧹
+        id: lint
+        run: npm run lint -- --format junit --output-file eslint-report.xml || true
+
+      - name: Report ESLint Results
+        uses: mikepenz/action-junit-report@v4
+        if: always()
+        with:
+          report_paths: 'eslint-report.xml'
+          fail_on_failure: false
+          require_tests: false
+          check_name: ESLint Results
+
+      - name: Run Tests 🧪
+        id: test
+        run: npm run test -- --ci --reporters=default --reporters=jest-junit || true
+
+      - name: Report Test Results
+        uses: mikepenz/action-junit-report@v4
+        if: always()
+        with:
+          report_paths: 'junit.xml'
+          fail_on_failure: false
+          check_name: Test Results
+          
+      - name: Check All Results
+        if: always()
+        run: |
+          if [ "${{ steps.typecheck.outcome }}" != "success" ] || [ "${{ steps.lint.outcome }}" != "success" ] || [ "${{ steps.test.outcome }}" != "success" ]; then
+            echo "One or more checks failed"
+            exit 1
+          fi
