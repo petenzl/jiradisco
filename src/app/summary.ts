@@ -1,12 +1,16 @@
 import { Initiative, InitiativesForMonth } from "./types";
+import { format, parseISO } from "date-fns";
+
+type MonthWork = {
+  work: number;
+  initiatives: Initiative[];
+};
 
 export function groupInitiativesByMonth(
   today: Date,
   initiatives: Initiative[],
   teamCapacityPerMonth: number = 20
 ): InitiativesForMonth[] {
-  const { format, parseISO } = require("date-fns");
-
   // Ensure today is at the start of the day
   today.setHours(0, 0, 0, 0);
 
@@ -23,7 +27,8 @@ export function groupInitiativesByMonth(
   );
 
   // Group initiatives by month
-  const monthlyWork = {};
+  const monthlyWork: { [key: string]: MonthWork } = {};
+
   const currentMonthKey = format(today, "yyyy-MM");
 
   initiatives.forEach((initiative) => {

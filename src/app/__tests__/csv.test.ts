@@ -36,7 +36,7 @@ jest.mock("../dates", () => ({
 
 // Mock Papa Parse
 jest.mock("papaparse", () => ({
-  parse: jest.fn((csvString, options) => {
+  parse: jest.fn((csvString) => {
     // Mock implementation of Papa.parse
     if (csvString.includes("ERROR")) {
       return {
@@ -112,7 +112,8 @@ describe("parseCsvRowToInitiative", () => {
   test("correctly parses a row with all fields properly populated", () => {
     const row = {
       summary: "Test Initiative",
-      "delivery status": "To Do: 5 of 15 story points | In Progress: 3 of 15 story points | Done: 7 of 15 story points",
+      "delivery status":
+        "To Do: 5 of 15 story points | In Progress: 3 of 15 story points | Done: 7 of 15 story points",
       "estimation status": "estimated",
       status: "In Progress",
       estimate: "15",

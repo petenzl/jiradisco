@@ -13,7 +13,11 @@ export type ParseCsvToInitiativesResult =
       error: string;
     };
 
-export function parseCsvRowToInitiative(today: Date, row: any): Initiative {
+interface CsvRow {
+  [key: string]: string;
+}
+
+export function parseCsvRowToInitiative(today: Date, row: CsvRow): Initiative {
   const deliveryStatusText = row["delivery status"] || "";
   const estimationStatus = row["estimation status"]
     ? row["estimation status"].toLowerCase()
@@ -42,7 +46,7 @@ export function parseCsvRowToInitiative(today: Date, row: any): Initiative {
     if (totalMatch) totalWork = parseFloat(totalMatch[1]);
   }
 
-  let workDays;
+  let workDays: number;
 
   if (
     estimationStatus === "not estimated" ||
@@ -58,18 +62,23 @@ export function parseCsvRowToInitiative(today: Date, row: any): Initiative {
     workDays = todo + 0.5 * inProgress;
   }
 
-  let percentComplete = 0;
+  let percentComplete: number;
+
   if (totalWork > 0) {
     percentComplete = ((totalWork - workDays) / totalWork) * 100;
   } else if (workDays === 0) {
     percentComplete = 100;
+  } else {
+    percentComplete = 0;
   }
+
   percentComplete = Math.max(0, Math.min(100, percentComplete));
 
   const targetDate = new Date(row["project target"]);
   const startDate = new Date(row["project start"]);
 
-  let expectedCompletion = 0;
+  let expectedCompletion: number;
+
   if (!isNaN(startDate.getTime()) && !isNaN(targetDate.getTime())) {
     const projectLengthInDays = differenceInDays(targetDate, startDate);
     if (projectLengthInDays > 0) {
@@ -83,10 +92,15 @@ export function parseCsvRowToInitiative(today: Date, row: any): Initiative {
     } else if (projectLengthInDays < 0) {
       //this can happen if the targetDate is in the past
       expectedCompletion = 100;
+    } else {
+      expectedCompletion = 0;
     }
+  } else {
+    expectedCompletion = 0;
   }
 
-  let projectedFinishDate;
+  let projectedFinishDate: Date;
+
   if (doneWork > 0) {
     projectedFinishDate = addWorkingDays(today, workDays);
   } else {
@@ -166,6 +180,13 @@ export function parseCsvToInitiatives(
     };
   }
 
+  if (!parsedHeaders) {
+    return {
+      outcome: "error",
+      error: "Failed to parse headers in CSV",
+    };
+  }
+
   const missingColumns = requiredColumns.filter(
     (col) => !parsedHeaders.includes(col)
   );
@@ -180,10 +201,6 @@ export function parseCsvToInitiatives(
   }
 
   try {
-    interface CsvRow {
-      [key: string]: string;
-    }
-
     const initiatives: Initiative[] = (results.data as CsvRow[])
       .map((row: CsvRow) => parseCsvRowToInitiative(today, row))
       .filter(

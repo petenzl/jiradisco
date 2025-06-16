@@ -501,46 +501,34 @@ function JiraCapacityPlanner() {
     setPage("home");
   };
 
-  const processData = useCallback(
-    (csvString: string) => {
-      setError(undefined);
-      setSelectedMonthData(null);
-      setPage("home");
-      const today = getToday();
-      const parseResult = parseCsvToInitiatives(today, csvString);
-      if (parseResult.outcome === "error") {
-        setData([]);
-        setAllInitiatives([]);
-        setError(parseResult.error);
-        return;
-      }
-      if (parseResult.initiatives.length === 0) {
-        setError(
-          "No valid initiatives found in the CSV file. Please check the data."
-        );
-        setData([]);
-        setAllInitiatives([]);
-        return;
-      }
-      const chartData = groupInitiativesByMonth(
-        today,
-        parseResult.initiatives,
-        TEAM_CAPACITY_PER_MONTH
+  const processData = useCallback((csvString: string) => {
+    setError(undefined);
+    setSelectedMonthData(null);
+    setPage("home");
+    const today = getToday();
+    const parseResult = parseCsvToInitiatives(today, csvString);
+    if (parseResult.outcome === "error") {
+      setData([]);
+      setAllInitiatives([]);
+      setError(parseResult.error);
+      return;
+    }
+    if (parseResult.initiatives.length === 0) {
+      setError(
+        "No valid initiatives found in the CSV file. Please check the data."
       );
-      setAllInitiatives(parseResult.initiatives);
-      setData(chartData);
-    },
-    [
-      setError,
-      setSelectedMonthData,
-      setPage,
-      setData,
-      setAllInitiatives,
-      getToday,
-      parseCsvToInitiatives,
-      groupInitiativesByMonth,
-    ]
-  );
+      setData([]);
+      setAllInitiatives([]);
+      return;
+    }
+    const chartData = groupInitiativesByMonth(
+      today,
+      parseResult.initiatives,
+      TEAM_CAPACITY_PER_MONTH
+    );
+    setAllInitiatives(parseResult.initiatives);
+    setData(chartData);
+  }, []);
 
   const onDrop = useCallback(
     (acceptedFiles) => {
@@ -575,8 +563,8 @@ function JiraCapacityPlanner() {
             Monthly Initiative Planner
           </h1>
           <p className="mt-2 text-lg text-gray-600">
-            Visualize your team's monthly workload against its capacity (120
-            days per month).
+            Visualize your team&apos;s monthly workload against its capacity
+            (120 days per month).
           </p>
         </header>
 
@@ -760,7 +748,7 @@ function JiraCapacityPlanner() {
         <footer className="text-center mt-12 text-sm text-gray-400">
           <p>
             A simple capacity planning tool. Assigns total work to the month of
-            the 'Project target' date.
+            the &apos;Project target&apos; date.
           </p>
         </footer>
       </div>
