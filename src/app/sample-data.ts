@@ -1,5 +1,5 @@
 // --- Mock Data ---
-const sampleCSVData = `Summary,Project start,Project target,Estimation Status,Estimate,Status,PM Customer,Delivery status
+export const sampleCSVData = `Summary,Project start,Project target,Estimation Status,Estimate,Status,PM Customer,Delivery status
 "Past Due Project","2025-04-01","2025-05-20","Estimated",5,"In Progress","Client A","To Do: 40 of 60 story points | In Progress: 10 of 60 story points | Done: 10 of 60 story points"
 "Project Phoenix","2025-07-01","2025-07-28","Estimated",5,"To Do","Client B","To Do: 20 of 50 story points | In Progress: 10 of 50 story points | Done: 20 of 50 story points"
 "Quantum Leap","2025-07-01","2025-07-31","Estimated",5,"In Progress","Client C","To Do: 25 of 45 story points | In Progress: 10 of 45 story points | Done: 10 of 45 story points"
