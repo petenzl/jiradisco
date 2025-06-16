@@ -27,13 +27,13 @@ export function parseCsvRowToInitiative(today: Date, row: any): Initiative {
     totalWork = 0;
 
   if (deliveryStatusText) {
-    const todoMatch = deliveryStatusText.match(/To Do: (\d+(\.\d+)?)/);
+    const todoMatch = deliveryStatusText.match(/To Do: (\d+(\.\d+)?|\d+) of/);
     const inProgressMatch = deliveryStatusText.match(
-      /In Progress: (\d+(\.\d+)?)/
+      /In Progress: (\d+(\.\d+)?|\d+) of/
     );
-    const doneMatch = deliveryStatusText.match(/Done: (\d+(\.\d+)?)/);
+    const doneMatch = deliveryStatusText.match(/Done: (\d+(\.\d+)?|\d+) of/);
     const totalMatch = deliveryStatusText.match(
-      /of (\d+(\.\d+)?) story points/
+      /of (\d+(\.\d+)?|\d+) story points/
     );
 
     if (todoMatch) todo = parseFloat(todoMatch[1]);

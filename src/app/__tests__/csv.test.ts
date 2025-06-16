@@ -62,7 +62,7 @@ jest.mock("papaparse", () => ({
             "project start": "2025-05-16",
             "project target": "2025-07-16",
             "delivery status":
-              "To Do: 5, In Progress: 3, Done: 7 of 15 story points",
+              "To Do: 5 of 15 story points | In Progress: 3 of 15 story points | Done: 7 of 15 story points",
             "estimation status": "estimated",
             estimate: "15",
             status: "In Progress",
@@ -73,7 +73,7 @@ jest.mock("papaparse", () => ({
             "project start": "2025-05-20",
             "project target": "2025-07-20",
             "delivery status":
-              "To Do: 10, In Progress: 5, Done: 5 of 20 story points",
+              "To Do: 10 of 20 story points | In Progress: 5 of 20 story points | Done: 5 of 20 story points",
             "estimation status": "estimated",
             estimate: "20",
             status: "In Progress",
@@ -112,7 +112,7 @@ describe("parseCsvRowToInitiative", () => {
   test("correctly parses a row with all fields properly populated", () => {
     const row = {
       summary: "Test Initiative",
-      "delivery status": "To Do: 5, In Progress: 3, Done: 7 of 15 story points",
+      "delivery status": "To Do: 5 of 15 story points | In Progress: 3 of 15 story points | Done: 7 of 15 story points",
       "estimation status": "estimated",
       status: "In Progress",
       estimate: "15",
@@ -179,7 +179,7 @@ describe("parseCsvRowToInitiative", () => {
     const row = {
       summary: "Big Initiative",
       "delivery status":
-        "To Do: 250, In Progress: 10, Done: 5 of 265 story points",
+        "To Do: 250 of 265 story points | In Progress: 10 of 265 story points | Done: 5 of 265 story points",
       "estimation status": "estimated",
       status: "In Progress",
       estimate: "265",
@@ -198,7 +198,7 @@ describe("parseCsvRowToInitiative", () => {
     const row = {
       summary: "New Initiative",
       "delivery status":
-        "To Do: 10, In Progress: 0, Done: 0 of 10 story points",
+        "To Do: 10 of 10 story points | In Progress: 0 of 10 story points | Done: 0 of 10 story points",
       "estimation status": "estimated",
       status: "Awaiting Requirements",
       estimate: "10",
@@ -217,7 +217,7 @@ describe("parseCsvRowToInitiative", () => {
     const row = {
       summary: "Completed Initiative",
       "delivery status":
-        "To Do: 0, In Progress: 0, Done: 15 of 15 story points",
+        "To Do: 0 of 15 story points | In Progress: 0 of 15 story points | Done: 15 of 15 story points",
       "estimation status": "estimated",
       status: "Done",
       estimate: "15",
