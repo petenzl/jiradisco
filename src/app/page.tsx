@@ -22,6 +22,7 @@ import {
   ReferenceLine,
   Cell,
 } from "recharts";
+import { Button } from "./components/button";
 import { useDropzone } from "react-dropzone";
 
 // smple data
@@ -141,10 +142,7 @@ const AllInitiativesView = ({
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <button
-          onClick={onBack}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-        >
+        <Button variant="button" onClick={onBack}>
           <svg
             className="-ml-1 mr-2 h-5 w-5"
             xmlns="http://www.w3.org/2000/svg"
@@ -159,7 +157,7 @@ const AllInitiativesView = ({
             />
           </svg>
           Back to Overview
-        </button>
+        </Button>
         <div className="text-center">
           <h3 className="text-xl font-semibold text-gray-800">
             All Initiatives
@@ -179,12 +177,9 @@ const AllInitiativesView = ({
             </span>
           </div>
         </div>
-        <button
-          onClick={handleDownload}
-          className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-        >
+        <Button variant="button" onClick={handleDownload}>
           Download CSV
-        </button>
+        </Button>
       </div>
 
       <div className="overflow-x-auto">
@@ -330,25 +325,24 @@ const DrilldownView = ({
 }) => {
   return (
     <div>
-      <button
-        onClick={onBack}
-        className="mb-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-      >
-        <svg
-          className="-ml-1 mr-2 h-5 w-5"
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 20 20"
-          fill="currentColor"
-          aria-hidden="true"
-        >
-          <path
-            fillRule="evenodd"
-            d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-            clipRule="evenodd"
-          />
-        </svg>
-        Back to Overview
-      </button>
+      <div className="mb-4">
+        <Button variant="button" onClick={onBack}>
+          <svg
+            className="-ml-1 mr-2 h-5 w-5"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path
+              fillRule="evenodd"
+              d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+              clipRule="evenodd"
+            />
+          </svg>
+          Back to Overview
+        </Button>
+      </div>
       <h3 className="text-xl font-semibold mb-4 text-gray-800">
         Initiatives Due in {monthData.name}
       </h3>
@@ -626,12 +620,9 @@ function JiraCapacityPlanner() {
                 )}
               </div>
               <div className="mt-4 text-center">
-                <button
-                  onClick={handleSampleData}
-                  className="w-full bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
+                <Button variant="button" onClick={handleSampleData}>
                   {"Or Use Sample Data"}
-                </button>
+                </Button>
               </div>
 
               {fileName && (
@@ -677,12 +668,9 @@ function JiraCapacityPlanner() {
                     Capacity vs Work Due Date
                   </h2>
                   {allInitiatives.length > 0 && (
-                    <button
-                      onClick={() => setPage("all")}
-                      className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
-                    >
+                    <Button variant="link" onClick={() => setPage("all")}>
                       View All Initiatives &rarr;
-                    </button>
+                    </Button>
                   )}
                 </div>
                 {data.length > 0 ? (
