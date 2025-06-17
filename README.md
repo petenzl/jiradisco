@@ -27,7 +27,9 @@ First, run the development server:
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the application.
+Open [http://localhost:3000/jiradisco/](http://localhost:3000/jiradisco/) with your browser to see the application.
+
+Note that the `/jiradisco/` path is required otherwise you will get a 404.
 
 ## Available Commands
 

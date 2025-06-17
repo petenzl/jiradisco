@@ -11,9 +11,10 @@ export function groupInitiativesByMonth(
   initiatives: Initiative[],
   teamCapacityPerMonth: number = 20
 ): InitiativesForMonth[] {
-  // Ensure today is at the start of the day
-  today.setHours(0, 0, 0, 0);
-
+  // Create a new date to avoid mutating the input
+  const todayForComparison = new Date(today);
+  todayForComparison.setHours(0, 0, 0, 0);
+  
   // Filter out initiatives that have no target date or are not valid
   initiatives = initiatives.filter(
     (initiative) =>
@@ -21,15 +22,12 @@ export function groupInitiativesByMonth(
   );
 
   // Sort initiatives by target date
-  initiatives.sort(
-    (a, b) =>
-      a.targetDate.getUTCMilliseconds() - b.targetDate.getUTCMilliseconds()
-  );
+  initiatives.sort((a, b) => a.targetDate.getTime() - b.targetDate.getTime());
 
   // Group initiatives by month
   const monthlyWork: { [key: string]: MonthWork } = {};
 
-  const currentMonthKey = format(today, "yyyy-MM");
+  const currentMonthKey = format(todayForComparison, "yyyy-MM");
 
   initiatives.forEach((initiative) => {
     const targetDate = new Date(initiative.targetDate.getTime());
@@ -37,7 +35,7 @@ export function groupInitiativesByMonth(
     targetDate.setHours(0, 0, 0, 0);
 
     const monthKey =
-      targetDate < today ? currentMonthKey : format(targetDate, "yyyy-MM");
+      targetDate < todayForComparison ? currentMonthKey : format(targetDate, "yyyy-MM");
 
     if (!monthlyWork[monthKey]) {
       monthlyWork[monthKey] = {
