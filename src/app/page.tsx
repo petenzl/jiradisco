@@ -31,7 +31,7 @@ import { sampleCSVData } from "./sample-data";
 // Define tooltip props with more specific types
 type TooltipProps = {
   active: boolean;
-  payload?: Array<{payload: InitiativesForMonth}>;
+  payload?: Array<{ payload: InitiativesForMonth }>;
   label: string;
 };
 
@@ -492,14 +492,15 @@ function JiraCapacityPlanner() {
   const [data, setData] = useState<InitiativesForMonth[]>([]);
   const [fileName, setFileName] = useState<string>();
   const [error, setError] = useState<string>();
-  const [selectedMonthData, setSelectedMonthData] = useState<InitiativesForMonth | null>(null);
+  const [selectedMonthData, setSelectedMonthData] =
+    useState<InitiativesForMonth | null>(null);
   const [page, setPage] = useState("home");
   const [allInitiatives, setAllInitiatives] = useState<Initiative[]>([]);
 
   const TEAM_CAPACITY_PER_MONTH = 120;
 
   type BarClickData = {
-    activePayload?: Array<{payload: InitiativesForMonth}>;
+    activePayload?: Array<{ payload: InitiativesForMonth }>;
   };
 
   const handleBarClick = (data: BarClickData) => {
@@ -710,7 +711,7 @@ function JiraCapacityPlanner() {
                             <CustomTooltip
                               active={props.active || false}
                               payload={props.payload}
-                              label={props.label || ''}
+                              label={props.label || ""}
                             />
                           )}
                           cursor={{ fill: "rgba(239, 246, 255, 0.5)" }}

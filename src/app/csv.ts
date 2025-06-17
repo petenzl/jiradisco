@@ -208,6 +208,8 @@ export function parseCsvToInitiatives(
           i.name && !isNaN(i.targetDate.getTime()) && !isNaN(i.workDays)
       );
 
+    initiatives.sort((a, b) => a.targetDate.getTime() - b.targetDate.getTime());
+
     return {
       outcome: "success",
       initiatives: initiatives,
