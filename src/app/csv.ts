@@ -18,6 +18,8 @@ interface CsvRow {
 }
 
 export function parseCsvRowToInitiative(today: Date, row: CsvRow): Initiative {
+  // Create a new date to avoid mutating the input
+  const todayForProcessing = new Date(today);
   const deliveryStatusText = row["delivery status"] || "";
   const estimationStatus = row["estimation status"]
     ? row["estimation status"].toLowerCase()
@@ -82,7 +84,7 @@ export function parseCsvRowToInitiative(today: Date, row: CsvRow): Initiative {
   if (!isNaN(startDate.getTime()) && !isNaN(targetDate.getTime())) {
     const projectLengthInDays = differenceInDays(targetDate, startDate);
     if (projectLengthInDays > 0) {
-      const elapsedDays = differenceInDays(today, startDate);
+      const elapsedDays = differenceInDays(todayForProcessing, startDate);
       expectedCompletion = Math.max(
         0,
         Math.min(100, (elapsedDays / projectLengthInDays) * 100)
@@ -102,9 +104,9 @@ export function parseCsvRowToInitiative(today: Date, row: CsvRow): Initiative {
   let projectedFinishDate: Date;
 
   if (doneWork > 0) {
-    projectedFinishDate = addWorkingDays(today, workDays);
+    projectedFinishDate = addWorkingDays(todayForProcessing, workDays);
   } else {
-    const dateFromWorkDue = addWorkingDays(today, workDays);
+    const dateFromWorkDue = addWorkingDays(todayForProcessing, workDays);
     projectedFinishDate = new Date(
       Math.max(dateFromWorkDue.getTime(), targetDate.getTime() || 0)
     );
@@ -143,6 +145,8 @@ export function parseCsvToInitiatives(
   today: Date,
   csvString: string
 ): ParseCsvToInitiativesResult {
+  // Create a new date to avoid mutating the input
+  const todayForProcessing = new Date(today);
   const results = Papa.parse(csvString, {
     header: true,
     skipEmptyLines: true,
@@ -202,7 +206,7 @@ export function parseCsvToInitiatives(
 
   try {
     const initiatives: Initiative[] = (results.data as CsvRow[])
-      .map((row: CsvRow) => parseCsvRowToInitiative(today, row))
+      .map((row: CsvRow) => parseCsvRowToInitiative(todayForProcessing, row))
       .filter(
         (i: Initiative) =>
           i.name && !isNaN(i.targetDate.getTime()) && !isNaN(i.workDays)
