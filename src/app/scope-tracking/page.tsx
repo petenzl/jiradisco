@@ -25,13 +25,8 @@ type ScopeDataPoint = {
   initiativeCount: number;
 };
 
-type TooltipProps = {
-  active?: boolean;
-  payload?: any;
-  label?: string;
-};
-
-const CustomTooltip = ({ active, payload }: TooltipProps) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
