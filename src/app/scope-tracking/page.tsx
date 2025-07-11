@@ -15,7 +15,6 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  TooltipProps,
 } from "recharts";
 
 type ScopeDataPoint = {
@@ -26,7 +25,8 @@ type ScopeDataPoint = {
   initiativeCount: number;
 };
 
-const CustomTooltip = ({ active, payload }: TooltipProps<number, string>) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
