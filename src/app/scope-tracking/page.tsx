@@ -15,6 +15,7 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  TooltipProps,
 } from "recharts";
 
 type ScopeDataPoint = {
@@ -25,13 +26,7 @@ type ScopeDataPoint = {
   initiativeCount: number;
 };
 
-type TooltipProps = {
-  active?: boolean;
-  payload?: any;
-  label?: string;
-};
-
-const CustomTooltip = ({ active, payload }: TooltipProps) => {
+const CustomTooltip = ({ active, payload }: TooltipProps<number, string>) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
