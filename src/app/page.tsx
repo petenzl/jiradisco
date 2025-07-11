@@ -23,6 +23,7 @@ import {
   Cell,
 } from "recharts";
 import { Button } from "./components/button";
+import Link from "next/link";
 import { useDropzone } from "react-dropzone";
 
 // smple data
@@ -565,13 +566,22 @@ function JiraCapacityPlanner() {
     <div className="bg-gray-50 min-h-screen font-sans text-gray-800 p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
         <header className="mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
-            Monthly Initiative Planner
-          </h1>
-          <p className="mt-2 text-lg text-gray-600">
-            Visualize your team&apos;s monthly workload against its capacity
-            (120 days per month).
-          </p>
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
+                Monthly Initiative Planner
+              </h1>
+              <p className="mt-2 text-lg text-gray-600">
+                Visualize your team&apos;s monthly workload against its capacity
+                (120 days per month).
+              </p>
+            </div>
+            <Link href="/scope-tracking">
+              <Button variant="button" className="ml-4">
+                Scope Tracking
+              </Button>
+            </Link>
+          </div>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
