@@ -1,9 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // output: "export", // Commented out for development
+  output: "export",
   reactStrictMode: true,
-  // basePath: "/jiradisco", // Commented out for development
+  basePath: "/jiradisco",
 };
 
 export default nextConfig;
