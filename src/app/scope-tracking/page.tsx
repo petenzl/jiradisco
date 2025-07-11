@@ -3,7 +3,6 @@
 import { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import { parse } from "date-fns";
-import { Initiative } from "../types";
 import { parseCsvToInitiatives } from "../csv";
 import { getToday } from "../dates";
 import { Button } from "../components/button";
@@ -32,7 +31,7 @@ type TooltipProps = {
   label?: string;
 };
 
-const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
+const CustomTooltip = ({ active, payload }: TooltipProps) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
@@ -82,7 +81,7 @@ export default function ScopeTrackingPage() {
     return null;
   };
 
-  const processFile = async (file: File): Promise<ScopeDataPoint | null> => {
+  const processFile = useCallback(async (file: File): Promise<ScopeDataPoint | null> => {
     const date = extractDateFromFileName(file.name);
     if (!date) {
       throw new Error(`Could not extract date from filename: ${file.name}`);
@@ -112,7 +111,7 @@ export default function ScopeTrackingPage() {
       fileName: file.name,
       initiativeCount: result.initiatives.length,
     };
-  };
+  }, []);
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
@@ -146,7 +145,7 @@ export default function ScopeTrackingPage() {
         setIsLoading(false);
       }
     },
-    [scopeData]
+    [scopeData, processFile]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -264,7 +263,7 @@ export default function ScopeTrackingPage() {
                   Drag and drop multiple CSV files, or click to select files
                 </p>
                 <p className="text-xs text-gray-400 mt-2">
-                  Expected filename format: "Envest Delivery Schedule - Product Planning Jul 10, 2025 10_06 AM.csv"
+                  Expected filename format: &quot;Envest Delivery Schedule - Product Planning Jul 10, 2025 10_06 AM.csv&quot;
                 </p>
               </div>
             </div>
