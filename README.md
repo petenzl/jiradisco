@@ -2,7 +2,7 @@
 
 A tool for importing CSV files from JIRA to visualize team capacity and workload distribution.
 
-You can find the latest publish version of the tool here: https://petenzl.github.io/jiradisco/
+You can find the latest published version of the tool here: https://petenzl.github.io/jiradisco/
 
 ## Purpose
 
