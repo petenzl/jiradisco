@@ -1,5 +1,5 @@
 import { groupInitiativesByMonth } from "../summary";
-import { Initiative } from "../types";
+import { Initiative, InitiativesForMonth } from "../types";
 
 describe("groupInitiativesByMonth", () => {
   // Create a base initiative that we can modify for different test cases
