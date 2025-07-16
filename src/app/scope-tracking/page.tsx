@@ -6,6 +6,7 @@ import { parse } from "date-fns";
 import { parseCsvToInitiatives } from "../csv";
 import { getToday } from "../dates";
 import { Button } from "../components/button";
+import { Initiative } from "../types";
 import {
   LineChart,
   Line,
@@ -23,6 +24,7 @@ type ScopeDataPoint = {
   workDone: number;
   fileName: string;
   initiativeCount: number;
+  initiatives: Initiative[]; // Store raw initiatives for filtering
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -54,6 +56,7 @@ const CustomTooltip = ({ active, payload }: any) => {
 
 export default function ScopeTrackingPage() {
   const [scopeData, setScopeData] = useState<ScopeDataPoint[]>([]);
+  const [filterDate, setFilterDate] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -105,6 +108,7 @@ export default function ScopeTrackingPage() {
       workDone,
       fileName: file.name,
       initiativeCount: result.initiatives.length,
+      initiatives: result.initiatives,
     };
   }, []);
 
@@ -154,15 +158,51 @@ export default function ScopeTrackingPage() {
   const clearData = () => {
     setScopeData([]);
     setError(null);
+    setFilterDate("");
+  };
+
+  // Filter data based on selected date
+  const getFilteredData = () => {
+    if (!filterDate) {
+      return scopeData;
+    }
+
+    const filterDateObj = new Date(filterDate);
+    filterDateObj.setHours(23, 59, 59, 999); // End of day
+
+    return scopeData.map(dataPoint => {
+      const filteredInitiatives = dataPoint.initiatives.filter((initiative: Initiative) => {
+        const targetDate = new Date(initiative.targetDate);
+        return targetDate <= filterDateObj;
+      });
+
+      const filteredTotalScope = filteredInitiatives.reduce(
+        (sum: number, initiative: Initiative) => sum + initiative.totalWork,
+        0
+      );
+
+      const filteredWorkDone = filteredInitiatives.reduce(
+        (sum: number, initiative: Initiative) => sum + initiative.doneWork,
+        0
+      );
+
+      return {
+        ...dataPoint,
+        totalScope: filteredTotalScope,
+        workDone: filteredWorkDone,
+        initiativeCount: filteredInitiatives.length,
+      };
+    });
   };
 
   const calculateProjectedFinishDate = () => {
-    if (scopeData.length < 2) {
+    const filteredData = getFilteredData();
+    if (filteredData.length < 2) {
       return null;
     }
 
     // Sort by date to ensure we have earliest and latest
-    const sortedData = [...scopeData].sort((a, b) => a.date.getTime() - b.date.getTime());
+    const sortedData = [...filteredData].sort((a, b) => a.date.getTime() - b.date.getTime());
     const earliest = sortedData[0];
     const latest = sortedData[sortedData.length - 1];
 
@@ -198,12 +238,13 @@ export default function ScopeTrackingPage() {
   };
 
   const calculateScopeCreep = () => {
-    if (scopeData.length < 2) {
+    const filteredData = getFilteredData();
+    if (filteredData.length < 2) {
       return null;
     }
 
     // Sort by date to ensure we have earliest and latest
-    const sortedData = [...scopeData].sort((a, b) => a.date.getTime() - b.date.getTime());
+    const sortedData = [...filteredData].sort((a, b) => a.date.getTime() - b.date.getTime());
     const latest = sortedData[sortedData.length - 1];
     
     // Calculate 14 days ago from the latest date
@@ -233,7 +274,7 @@ export default function ScopeTrackingPage() {
     };
   };
 
-  const chartData = scopeData.map((point) => ({
+  const chartData = getFilteredData().map((point) => ({
     ...point,
     date: point.date.toLocaleDateString(),
   }));
@@ -347,6 +388,41 @@ export default function ScopeTrackingPage() {
               </Button>
             </div>
 
+            {/* Date Filter */}
+            <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-medium text-gray-900 mb-1">
+                    Filter by Target Completion Date
+                  </h3>
+                  <p className="text-xs text-gray-600">
+                    {filterDate 
+                      ? `Showing initiatives due on or before ${new Date(filterDate).toLocaleDateString()}`
+                      : "Showing all initiatives (no filter applied)"
+                    }
+                  </p>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="date"
+                    value={filterDate}
+                    onChange={(e) => setFilterDate(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Select date"
+                  />
+                  {filterDate && (
+                    <Button 
+                      variant="button" 
+                      onClick={() => setFilterDate("")}
+                      className="text-sm"
+                    >
+                      Clear Filter
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+
             {projection && (
               <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <h3 className="text-lg font-semibold text-blue-900 mb-2">
@@ -454,7 +530,7 @@ export default function ScopeTrackingPage() {
                 Uploaded Files
               </h3>
               <div className="space-y-2">
-                {scopeData.map((point, index) => (
+                {getFilteredData().map((point, index) => (
                   <div
                     key={index}
                     className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
