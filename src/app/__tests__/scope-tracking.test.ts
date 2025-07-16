@@ -511,7 +511,24 @@ describe("Scope Tracking Functionality", () => {
   });
 
   describe("Date Filtering", () => {
-    const createMockScopeData = () => [
+    // Define types for test data
+    type TestInitiative = {
+      name: string;
+      targetDate: Date;
+      totalWork: number;
+      doneWork: number;
+    };
+
+    type TestScopeDataPoint = {
+      date: Date;
+      totalScope: number;
+      workDone: number;
+      fileName: string;
+      initiativeCount: number;
+      initiatives: TestInitiative[];
+    };
+
+    const createMockScopeData = (): TestScopeDataPoint[] => [
       {
         date: new Date("2024-01-01"),
         totalScope: 100,
@@ -562,7 +579,7 @@ describe("Scope Tracking Functionality", () => {
       },
     ];
 
-    const getFilteredData = (scopeData: any[], filterDate: string) => {
+    const getFilteredData = (scopeData: TestScopeDataPoint[], filterDate: string): TestScopeDataPoint[] => {
       if (!filterDate) {
         return scopeData;
       }
@@ -571,18 +588,18 @@ describe("Scope Tracking Functionality", () => {
       filterDateObj.setHours(23, 59, 59, 999); // End of day
 
       return scopeData.map(dataPoint => {
-        const filteredInitiatives = dataPoint.initiatives.filter((initiative: any) => {
+        const filteredInitiatives = dataPoint.initiatives.filter((initiative: TestInitiative) => {
           const targetDate = new Date(initiative.targetDate);
           return targetDate <= filterDateObj;
         });
 
         const filteredTotalScope = filteredInitiatives.reduce(
-          (sum: number, initiative: any) => sum + initiative.totalWork,
+          (sum: number, initiative: TestInitiative) => sum + initiative.totalWork,
           0
         );
 
         const filteredWorkDone = filteredInitiatives.reduce(
-          (sum: number, initiative: any) => sum + initiative.doneWork,
+          (sum: number, initiative: TestInitiative) => sum + initiative.doneWork,
           0
         );
 
@@ -665,7 +682,7 @@ describe("Scope Tracking Functionality", () => {
     });
 
     it("should handle scope data with empty initiatives", () => {
-      const scopeData = [
+      const scopeData: TestScopeDataPoint[] = [
         {
           date: new Date("2024-01-01"),
           totalScope: 0,
