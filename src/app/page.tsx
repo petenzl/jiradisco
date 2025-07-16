@@ -21,6 +21,8 @@ import {
   ResponsiveContainer,
   ReferenceLine,
   Cell,
+  LineChart,
+  Line,
 } from "recharts";
 import { Button } from "./components/button";
 import Link from "next/link";
@@ -68,6 +70,53 @@ const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
     );
   }
   return null;
+};
+
+// Define tooltip props for cumulative chart
+type CumulativeTooltipProps = {
+  active: boolean;
+  payload?: Array<{ payload: { name: string; cumulativeWork: number; cumulativeCapacity: number } }>;
+  label: string;
+};
+
+const CumulativeTooltip = ({ active, payload, label }: CumulativeTooltipProps) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="bg-white p-4 border border-gray-300 rounded-lg shadow-lg">
+        <p className="font-bold text-gray-800">{`Month: ${label}`}</p>
+        <p className="text-sm text-blue-500">{`Cumulative Work Due: ${data.cumulativeWork} days`}</p>
+        <p className="text-sm text-green-500">{`Cumulative Capacity: ${data.cumulativeCapacity} days`}</p>
+        <p
+          className={`text-sm font-semibold ${
+            data.cumulativeWork > data.cumulativeCapacity ? "text-red-500" : "text-green-600"
+          }`}
+        >
+          {data.cumulativeWork > data.cumulativeCapacity
+            ? `Over Capacity by ${data.cumulativeWork - data.cumulativeCapacity} days`
+            : `Under Capacity by ${data.cumulativeCapacity - data.cumulativeWork} days`}
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
+// Function to calculate cumulative data
+const calculateCumulativeData = (data: InitiativesForMonth[], teamCapacityPerMonth: number) => {
+  return data.map((month, index) => {
+    const cumulativeWork = data
+      .slice(0, index + 1)
+      .reduce((sum, monthData) => sum + monthData.work, 0);
+    
+    const cumulativeCapacity = (index + 1) * teamCapacityPerMonth;
+    
+    return {
+      name: month.name,
+      cumulativeWork,
+      cumulativeCapacity,
+    };
+  });
 };
 
 const AllInitiativesView = ({
@@ -751,6 +800,68 @@ function JiraCapacityPlanner() {
                   <div className="flex items-center justify-center h-full text-gray-500 min-h-[400px]">
                     <p>Upload a CSV or use sample data to see the chart.</p>
                   </div>
+                )}
+
+                {/* Cumulative Chart */}
+                {data.length > 0 && (
+                  <>
+                    <div className="mt-8 mb-6">
+                      <h2 className="text-2xl font-semibold text-gray-800">
+                        Cumulative Work Due vs Team Capacity
+                      </h2>
+                    </div>
+                    <div style={{ width: "100%", height: 400 }}>
+                      <ResponsiveContainer>
+                        <LineChart
+                          data={calculateCumulativeData(data, TEAM_CAPACITY_PER_MONTH)}
+                          margin={{ top: 5, right: 20, left: -10, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                          <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                          <YAxis
+                            label={{
+                              value: "Cumulative Work Days",
+                              angle: -90,
+                              position: "insideLeft",
+                              offset: 10,
+                              style: { textAnchor: "middle" },
+                            }}
+                            tick={{ fontSize: 12 }}
+                          />
+                          <Tooltip
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            content={(props: any) => (
+                              <CumulativeTooltip
+                                active={props.active || false}
+                                payload={props.payload}
+                                label={props.label || ""}
+                              />
+                            )}
+                          />
+                          <Legend wrapperStyle={{ paddingTop: "20px" }} />
+                          <Line
+                            type="monotone"
+                            dataKey="cumulativeWork"
+                            name="Cumulative Work Due"
+                            stroke="#3b82f6"
+                            strokeWidth={3}
+                            dot={{ fill: "#3b82f6", strokeWidth: 2, r: 4 }}
+                            activeDot={{ r: 6 }}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="cumulativeCapacity"
+                            name="Cumulative Capacity"
+                            stroke="#16a34a"
+                            strokeWidth={3}
+                            strokeDasharray="5 5"
+                            dot={{ fill: "#16a34a", strokeWidth: 2, r: 4 }}
+                            activeDot={{ r: 6 }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </>
                 )}
               </>
             )}

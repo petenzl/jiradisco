@@ -170,3 +170,54 @@ describe("groupInitiativesByMonth", () => {
     expect(result).toEqual([]);
   });
 });
+
+describe("Cumulative Data Calculation", () => {
+  const calculateCumulativeData = (data: InitiativesForMonth[], teamCapacityPerMonth: number) => {
+    return data.map((month, index) => {
+      const cumulativeWork = data
+        .slice(0, index + 1)
+        .reduce((sum, monthData) => sum + monthData.work, 0);
+      
+      const cumulativeCapacity = (index + 1) * teamCapacityPerMonth;
+      
+      return {
+        name: month.name,
+        cumulativeWork,
+        cumulativeCapacity,
+      };
+    });
+  };
+
+  it("should calculate cumulative data correctly", () => {
+    const mockData: InitiativesForMonth[] = [
+      { name: "Jan 24", work: 100, capacity: 120, initiatives: [] },
+      { name: "Feb 24", work: 150, capacity: 120, initiatives: [] },
+      { name: "Mar 24", work: 80, capacity: 120, initiatives: [] },
+    ];
+
+    const result = calculateCumulativeData(mockData, 120);
+
+    expect(result).toEqual([
+      { name: "Jan 24", cumulativeWork: 100, cumulativeCapacity: 120 },
+      { name: "Feb 24", cumulativeWork: 250, cumulativeCapacity: 240 },
+      { name: "Mar 24", cumulativeWork: 330, cumulativeCapacity: 360 },
+    ]);
+  });
+
+  it("should handle empty data", () => {
+    const result = calculateCumulativeData([], 120);
+    expect(result).toEqual([]);
+  });
+
+  it("should handle single month data", () => {
+    const mockData: InitiativesForMonth[] = [
+      { name: "Jan 24", work: 100, capacity: 120, initiatives: [] },
+    ];
+
+    const result = calculateCumulativeData(mockData, 120);
+
+    expect(result).toEqual([
+      { name: "Jan 24", cumulativeWork: 100, cumulativeCapacity: 120 },
+    ]);
+  });
+});

@@ -197,12 +197,49 @@ export default function ScopeTrackingPage() {
     };
   };
 
+  const calculateScopeCreep = () => {
+    if (scopeData.length < 2) {
+      return null;
+    }
+
+    // Sort by date to ensure we have earliest and latest
+    const sortedData = [...scopeData].sort((a, b) => a.date.getTime() - b.date.getTime());
+    const latest = sortedData[sortedData.length - 1];
+    
+    // Calculate 14 days ago from the latest date
+    const fourteenDaysAgo = new Date(latest.date.getTime() - (14 * 24 * 60 * 60 * 1000));
+    
+    // Find the data point closest to 14 days ago (or the earliest available if less than 14 days)
+    let comparisonPoint = sortedData[0]; // Default to earliest point
+    
+    for (let i = sortedData.length - 2; i >= 0; i--) {
+      const point = sortedData[i];
+      if (point.date <= fourteenDaysAgo) {
+        comparisonPoint = point;
+        break;
+      }
+    }
+    
+    // Calculate scope change
+    const scopeChange = latest.totalScope - comparisonPoint.totalScope;
+    const daysBetween = Math.max(1, (latest.date.getTime() - comparisonPoint.date.getTime()) / (1000 * 60 * 60 * 24));
+    
+    return {
+      scopeChange,
+      scopeChangePerDay: scopeChange / daysBetween,
+      comparisonDate: comparisonPoint.date,
+      latestDate: latest.date,
+      daysBetween: Math.round(daysBetween),
+    };
+  };
+
   const chartData = scopeData.map((point) => ({
     ...point,
     date: point.date.toLocaleDateString(),
   }));
 
   const projection = calculateProjectedFinishDate();
+  const scopeCreep = calculateScopeCreep();
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -325,7 +362,7 @@ export default function ScopeTrackingPage() {
                     <p className="text-blue-900">{projection.remainingWork.toFixed(1)} days</p>
                   </div>
                   <div>
-                    <p className="text-blue-700 font-medium">Days Remaining</p>
+                    <p className="text-blue-700 font-medium">Est days to completion</p>
                     <p className="text-blue-900">{projection.daysRemaining.toFixed(1)} days</p>
                   </div>
                   <div>
@@ -337,6 +374,39 @@ export default function ScopeTrackingPage() {
                 </div>
                 <div className="mt-2 text-xs text-blue-600">
                   Based on data from {projection.earliestDate.toLocaleDateString()} to {projection.latestDate.toLocaleDateString()}
+                </div>
+              </div>
+            )}
+
+            {scopeCreep && (
+              <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                <h3 className="text-lg font-semibold text-orange-900 mb-2">
+                  Scope Change - Last 14 Days
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <p className="text-orange-700 font-medium">Total Scope Change</p>
+                    <p className={`font-semibold ${scopeCreep.scopeChange >= 0 ? 'text-red-600' : 'text-green-600'}`}>
+                      {scopeCreep.scopeChange >= 0 ? '+' : ''}{scopeCreep.scopeChange.toFixed(1)} days
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-orange-700 font-medium">Scope Change Rate</p>
+                    <p className={`font-semibold ${scopeCreep.scopeChangePerDay >= 0 ? 'text-red-600' : 'text-green-600'}`}>
+                      {scopeCreep.scopeChangePerDay >= 0 ? '+' : ''}{scopeCreep.scopeChangePerDay.toFixed(2)} days/day
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-orange-700 font-medium">Time Period</p>
+                    <p className="text-orange-900">{scopeCreep.daysBetween} days</p>
+                  </div>
+                  <div>
+                    <p className="text-orange-700 font-medium">Comparison Date</p>
+                    <p className="text-orange-900">{scopeCreep.comparisonDate.toLocaleDateString()}</p>
+                  </div>
+                </div>
+                <div className="mt-2 text-xs text-orange-600">
+                  Comparing {scopeCreep.comparisonDate.toLocaleDateString()} to {scopeCreep.latestDate.toLocaleDateString()}
                 </div>
               </div>
             )}
