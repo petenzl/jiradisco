@@ -18,7 +18,7 @@ describe("Scope Tracking Functionality", () => {
   });
 
   describe("Date Extraction from Filename", () => {
-    const extractDateFromFileName = (fileName: string): Date | null => {
+    const extractDateFromFileName = async (fileName: string): Promise<Date | null> => {
       // Pattern: "Envest Delivery Schedule - Product Planning Jul 10, 2025 10_06 AM.csv"
       const datePattern = /(\w{3}\s+\d{1,2},\s+\d{4})/;
       const match = fileName.match(datePattern);
@@ -26,11 +26,10 @@ describe("Scope Tracking Functionality", () => {
       if (match) {
         try {
           // Parse the date string (e.g., "Jul 10, 2025")
-          const { parse } = require("date-fns");
+          const { parse } = await import("date-fns");
           const date = parse(match[1], "MMM d, yyyy", new Date());
           return date;
-        } catch (error) {
-          console.error("Error parsing date from filename:", error);
+        } catch {
           return null;
         }
       }
@@ -38,9 +37,9 @@ describe("Scope Tracking Functionality", () => {
       return null;
     };
 
-    it("should extract date from valid filename", () => {
+    it("should extract date from valid filename", async () => {
       const fileName = "Envest Delivery Schedule - Product Planning Jul 10, 2025 10_06 AM.csv";
-      const result = extractDateFromFileName(fileName);
+      const result = await extractDateFromFileName(fileName);
       
       expect(result).toBeInstanceOf(Date);
       expect(result?.getFullYear()).toBe(2025);
@@ -48,9 +47,9 @@ describe("Scope Tracking Functionality", () => {
       expect(result?.getDate()).toBe(10);
     });
 
-    it("should extract date from filename with single digit day", () => {
+    it("should extract date from filename with single digit day", async () => {
       const fileName = "Envest Delivery Schedule - Product Planning Jan 5, 2025 10_06 AM.csv";
-      const result = extractDateFromFileName(fileName);
+      const result = await extractDateFromFileName(fileName);
       
       expect(result).toBeInstanceOf(Date);
       expect(result?.getFullYear()).toBe(2025);
@@ -58,34 +57,34 @@ describe("Scope Tracking Functionality", () => {
       expect(result?.getDate()).toBe(5);
     });
 
-    it("should return null for filename without date", () => {
+    it("should return null for filename without date", async () => {
       const fileName = "random-file.csv";
-      const result = extractDateFromFileName(fileName);
+      const result = await extractDateFromFileName(fileName);
       
       expect(result).toBeNull();
     });
 
-    it("should return null for filename with invalid date format", () => {
+    it("should return null for filename with invalid date format", async () => {
       const fileName = "Envest Delivery Schedule - Product Planning Invalid 32, 2025.csv";
-      const result = extractDateFromFileName(fileName);
+      const result = await extractDateFromFileName(fileName);
       
       // The date parsing will fail and return a Date with NaN
       expect(result).toBeInstanceOf(Date);
       expect(isNaN(result!.getTime())).toBe(true);
     });
 
-    it("should handle different month abbreviations", () => {
+    it("should handle different month abbreviations", async () => {
       const testCases = [
         { fileName: "file Dec 25, 2024.csv", expectedMonth: 11 },
         { fileName: "file Feb 14, 2025.csv", expectedMonth: 1 },
         { fileName: "file Mar 1, 2025.csv", expectedMonth: 2 },
       ];
 
-      testCases.forEach(({ fileName, expectedMonth }) => {
-        const result = extractDateFromFileName(fileName);
+      for (const { fileName, expectedMonth } of testCases) {
+        const result = await extractDateFromFileName(fileName);
         expect(result).toBeInstanceOf(Date);
         expect(result?.getMonth()).toBe(expectedMonth);
-      });
+      }
     });
   });
 
@@ -97,23 +96,23 @@ describe("Scope Tracking Functionality", () => {
       fileName: string;
       initiativeCount: number;
     } | null> => {
-      const extractDateFromFileName = (fileName: string): Date | null => {
+      const extractDateFromFileName = async (fileName: string): Promise<Date | null> => {
         const datePattern = /(\w{3}\s+\d{1,2},\s+\d{4})/;
         const match = fileName.match(datePattern);
         
         if (match) {
           try {
-            const { parse } = require("date-fns");
+            const { parse } = await import("date-fns");
             const date = parse(match[1], "MMM d, yyyy", new Date());
             return date;
-          } catch (error) {
+          } catch {
             return null;
           }
         }
         return null;
       };
 
-      const date = extractDateFromFileName(file.name);
+      const date = await extractDateFromFileName(file.name);
       if (!date) {
         throw new Error(`Could not extract date from filename: ${file.name}`);
       }
@@ -354,6 +353,120 @@ describe("Scope Tracking Functionality", () => {
       expect(result).not.toBeNull();
       // With 1 day between (minimum), work rate would be 30 days/day
       expect(result?.workRatePerDay).toBe(30);
+    });
+  });
+
+  describe("Scope Creep Calculation", () => {
+    const calculateScopeCreep = (scopeData: Array<{
+      date: Date;
+      totalScope: number;
+      workDone: number;
+    }>) => {
+      if (scopeData.length < 2) {
+        return null;
+      }
+
+      // Sort by date to ensure we have earliest and latest
+      const sortedData = [...scopeData].sort((a, b) => a.date.getTime() - b.date.getTime());
+      const latest = sortedData[sortedData.length - 1];
+      
+      // Calculate 14 days ago from the latest date
+      const fourteenDaysAgo = new Date(latest.date.getTime() - (14 * 24 * 60 * 60 * 1000));
+      
+      // Find the data point closest to 14 days ago (or the earliest available if less than 14 days)
+      let comparisonPoint = sortedData[0]; // Default to earliest point
+      
+      for (let i = sortedData.length - 2; i >= 0; i--) {
+        const point = sortedData[i];
+        if (point.date <= fourteenDaysAgo) {
+          comparisonPoint = point;
+          break;
+        }
+      }
+      
+      // Calculate scope change
+      const scopeChange = latest.totalScope - comparisonPoint.totalScope;
+      const daysBetween = Math.max(1, (latest.date.getTime() - comparisonPoint.date.getTime()) / (1000 * 60 * 60 * 24));
+      
+      return {
+        scopeChange,
+        scopeChangePerDay: scopeChange / daysBetween,
+        comparisonDate: comparisonPoint.date,
+        latestDate: latest.date,
+        daysBetween: Math.round(daysBetween),
+      };
+    };
+
+    it("should calculate scope creep correctly", () => {
+      const baseDate = new Date("2024-01-01");
+      const scopeData = [
+        { date: new Date(baseDate.getTime() - 25 * 24 * 60 * 60 * 1000), totalScope: 100, workDone: 20 },
+        { date: new Date(baseDate.getTime() - 14 * 24 * 60 * 60 * 1000), totalScope: 120, workDone: 30 },
+        { date: new Date(baseDate.getTime() - 7 * 24 * 60 * 60 * 1000), totalScope: 140, workDone: 45 },
+        { date: baseDate, totalScope: 160, workDone: 60 },
+      ];
+
+      const result = calculateScopeCreep(scopeData);
+
+      expect(result).toEqual({
+        scopeChange: 40, // 160 - 120 (using 14 days ago point)
+        scopeChangePerDay: 40 / 14, // 40 days change over 14 days
+        comparisonDate: new Date(baseDate.getTime() - 14 * 24 * 60 * 60 * 1000),
+        latestDate: baseDate,
+        daysBetween: 14,
+      });
+    });
+
+    it("should handle scope reduction (negative creep)", () => {
+      const baseDate = new Date("2024-01-01");
+      const scopeData = [
+        { date: new Date(baseDate.getTime() - 20 * 24 * 60 * 60 * 1000), totalScope: 200, workDone: 20 },
+        { date: new Date(baseDate.getTime() - 14 * 24 * 60 * 60 * 1000), totalScope: 180, workDone: 40 },
+        { date: baseDate, totalScope: 150, workDone: 60 },
+      ];
+
+      const result = calculateScopeCreep(scopeData);
+
+      expect(result).toEqual({
+        scopeChange: -30, // 150 - 180 (using 14 days ago point)
+        scopeChangePerDay: -30 / 14, // -30 days change over 14 days
+        comparisonDate: new Date(baseDate.getTime() - 14 * 24 * 60 * 60 * 1000),
+        latestDate: baseDate,
+        daysBetween: 14,
+      });
+    });
+
+    it("should use earliest point when no data point is 14+ days old", () => {
+      const baseDate = new Date("2024-01-01");
+      const scopeData = [
+        { date: new Date(baseDate.getTime() - 10 * 24 * 60 * 60 * 1000), totalScope: 100, workDone: 20 },
+        { date: new Date(baseDate.getTime() - 5 * 24 * 60 * 60 * 1000), totalScope: 120, workDone: 30 },
+        { date: baseDate, totalScope: 140, workDone: 45 },
+      ];
+
+      const result = calculateScopeCreep(scopeData);
+
+      expect(result).toEqual({
+        scopeChange: 40, // 140 - 100
+        scopeChangePerDay: 40 / 10, // 40 days change over 10 days
+        comparisonDate: new Date(baseDate.getTime() - 10 * 24 * 60 * 60 * 1000),
+        latestDate: baseDate,
+        daysBetween: 10,
+      });
+    });
+
+    it("should return null for insufficient data", () => {
+      const scopeData = [
+        { date: new Date("2024-01-01"), totalScope: 100, workDone: 20 },
+      ];
+
+      const result = calculateScopeCreep(scopeData);
+      expect(result).toBeNull();
+    });
+
+    it("should handle empty data", () => {
+      const result = calculateScopeCreep([]);
+      expect(result).toBeNull();
     });
   });
 
