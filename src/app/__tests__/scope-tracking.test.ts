@@ -509,4 +509,188 @@ describe("Scope Tracking Functionality", () => {
       expect(allData[3].date).toEqual(new Date("2025-01-20"));
     });
   });
+
+  describe("Date Filtering", () => {
+    const createMockScopeData = () => [
+      {
+        date: new Date("2024-01-01"),
+        totalScope: 100,
+        workDone: 20,
+        fileName: "file1.csv",
+        initiativeCount: 2,
+        initiatives: [
+          {
+            name: "Initiative 1",
+            targetDate: new Date("2024-02-15"),
+            totalWork: 60,
+            doneWork: 10,
+          },
+          {
+            name: "Initiative 2",
+            targetDate: new Date("2024-03-30"),
+            totalWork: 40,
+            doneWork: 10,
+          },
+        ],
+      },
+      {
+        date: new Date("2024-01-15"),
+        totalScope: 120,
+        workDone: 30,
+        fileName: "file2.csv",
+        initiativeCount: 3,
+        initiatives: [
+          {
+            name: "Initiative 3",
+            targetDate: new Date("2024-02-01"),
+            totalWork: 50,
+            doneWork: 15,
+          },
+          {
+            name: "Initiative 4",
+            targetDate: new Date("2024-04-15"),
+            totalWork: 40,
+            doneWork: 10,
+          },
+          {
+            name: "Initiative 5",
+            targetDate: new Date("2024-01-20"),
+            totalWork: 30,
+            doneWork: 5,
+          },
+        ],
+      },
+    ];
+
+    const getFilteredData = (scopeData: any[], filterDate: string) => {
+      if (!filterDate) {
+        return scopeData;
+      }
+
+      const filterDateObj = new Date(filterDate);
+      filterDateObj.setHours(23, 59, 59, 999); // End of day
+
+      return scopeData.map(dataPoint => {
+        const filteredInitiatives = dataPoint.initiatives.filter((initiative: any) => {
+          const targetDate = new Date(initiative.targetDate);
+          return targetDate <= filterDateObj;
+        });
+
+        const filteredTotalScope = filteredInitiatives.reduce(
+          (sum: number, initiative: any) => sum + initiative.totalWork,
+          0
+        );
+
+        const filteredWorkDone = filteredInitiatives.reduce(
+          (sum: number, initiative: any) => sum + initiative.doneWork,
+          0
+        );
+
+        return {
+          ...dataPoint,
+          totalScope: filteredTotalScope,
+          workDone: filteredWorkDone,
+          initiativeCount: filteredInitiatives.length,
+        };
+      });
+    };
+
+    it("should return all data when no filter is applied", () => {
+      const scopeData = createMockScopeData();
+      const result = getFilteredData(scopeData, "");
+
+      expect(result).toEqual(scopeData);
+      expect(result[0].totalScope).toBe(100);
+      expect(result[0].initiativeCount).toBe(2);
+      expect(result[1].totalScope).toBe(120);
+      expect(result[1].initiativeCount).toBe(3);
+    });
+
+    it("should filter initiatives by target completion date", () => {
+      const scopeData = createMockScopeData();
+      const result = getFilteredData(scopeData, "2024-02-15");
+
+      // First data point: should include Initiative 1 (due 2024-02-15), exclude Initiative 2 (due 2024-03-30)
+      expect(result[0].totalScope).toBe(60); // Only Initiative 1
+      expect(result[0].workDone).toBe(10); // Only Initiative 1
+      expect(result[0].initiativeCount).toBe(1);
+
+      // Second data point: should include Initiative 3 (due 2024-02-01) and Initiative 5 (due 2024-01-20), exclude Initiative 4 (due 2024-04-15)
+      expect(result[1].totalScope).toBe(80); // 50 + 30
+      expect(result[1].workDone).toBe(20); // 15 + 5
+      expect(result[1].initiativeCount).toBe(2);
+    });
+
+    it("should exclude initiatives due after the filter date", () => {
+      const scopeData = createMockScopeData();
+      const result = getFilteredData(scopeData, "2024-02-01");
+
+      // First data point: should exclude both Initiative 1 (due 2024-02-15) and Initiative 2 (due 2024-03-30)
+      expect(result[0].totalScope).toBe(0); // No initiatives included
+      expect(result[0].workDone).toBe(0); // No initiatives included
+      expect(result[0].initiativeCount).toBe(0);
+
+      // Second data point: should include Initiative 3 (due 2024-02-01) and Initiative 5 (due 2024-01-20), exclude Initiative 4 (due 2024-04-15)
+      expect(result[1].totalScope).toBe(80); // 50 + 30
+      expect(result[1].workDone).toBe(20); // 15 + 5
+      expect(result[1].initiativeCount).toBe(2);
+    });
+
+    it("should handle edge case where no initiatives match the filter", () => {
+      const scopeData = createMockScopeData();
+      const result = getFilteredData(scopeData, "2023-12-31");
+
+      // All initiatives are due after 2023-12-31, so all should be filtered out
+      expect(result[0].totalScope).toBe(0);
+      expect(result[0].workDone).toBe(0);
+      expect(result[0].initiativeCount).toBe(0);
+
+      expect(result[1].totalScope).toBe(0);
+      expect(result[1].workDone).toBe(0);
+      expect(result[1].initiativeCount).toBe(0);
+    });
+
+    it("should handle exact date matches (initiatives due on the filter date)", () => {
+      const scopeData = createMockScopeData();
+      const result = getFilteredData(scopeData, "2024-02-15");
+
+      // Should include Initiative 1 which is due exactly on 2024-02-15, exclude Initiative 2 (due 2024-03-30)
+      expect(result[0].totalScope).toBe(60); // Only Initiative 1
+      expect(result[0].initiativeCount).toBe(1);
+    });
+
+    it("should handle empty scope data", () => {
+      const result = getFilteredData([], "2024-02-15");
+      expect(result).toEqual([]);
+    });
+
+    it("should handle scope data with empty initiatives", () => {
+      const scopeData = [
+        {
+          date: new Date("2024-01-01"),
+          totalScope: 0,
+          workDone: 0,
+          fileName: "empty.csv",
+          initiativeCount: 0,
+          initiatives: [],
+        },
+      ];
+
+      const result = getFilteredData(scopeData, "2024-02-15");
+      expect(result[0].totalScope).toBe(0);
+      expect(result[0].workDone).toBe(0);
+      expect(result[0].initiativeCount).toBe(0);
+    });
+
+    it("should preserve original data structure when filtering", () => {
+      const scopeData = createMockScopeData();
+      const result = getFilteredData(scopeData, "2024-02-01");
+
+      // Check that the structure is preserved
+      expect(result[0]).toHaveProperty("date");
+      expect(result[0]).toHaveProperty("fileName");
+      expect(result[0]).toHaveProperty("initiatives");
+      expect(Array.isArray(result[0].initiatives)).toBe(true);
+    });
+  });
 }); 
