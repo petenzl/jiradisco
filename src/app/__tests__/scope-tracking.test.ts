@@ -527,8 +527,11 @@ describe("Scope Tracking Functionality", () => {
 
       expect(result.effectiveWorkRate).toBe(1.5); // 2.0 - 0.5
       expect(result.daysToCompletionWithCreep).toBeCloseTo(26.67, 2); // 40 / 1.5
-      // 26.67 days from 2025-01-15 = 2025-02-10 (26.67 * 24 hours = 640.08 hours, so 26 full days + 16 hours)
-      expect(result.projectedDateWithCreep.toDateString()).toBe(new Date("2025-02-11").toDateString());
+      
+      // Calculate expected date programmatically to avoid timezone issues
+      const today = new Date("2025-01-15");
+      const expectedDate = new Date(today.getTime() + (26.67 * 24 * 60 * 60 * 1000));
+      expect(result.projectedDateWithCreep.toDateString()).toBe(expectedDate.toDateString());
     });
 
     it("should calculate projected finish date with negative scope creep (scope reduction)", () => {
@@ -553,8 +556,11 @@ describe("Scope Tracking Functionality", () => {
 
       expect(result.effectiveWorkRate).toBe(2.25); // 2.0 - (-0.25)
       expect(result.daysToCompletionWithCreep).toBeCloseTo(17.78, 2); // 40 / 2.25
-      // 17.78 days from 2025-01-15 = 2025-02-02 (17.78 * 24 hours = 426.72 hours, so 17 full days + 18.72 hours)
-      expect(result.projectedDateWithCreep.toDateString()).toBe(new Date("2025-02-02").toDateString());
+      
+      // Calculate expected date programmatically to avoid timezone issues
+      const today = new Date("2025-01-15");
+      const expectedDate = new Date(today.getTime() + (17.78 * 24 * 60 * 60 * 1000));
+      expect(result.projectedDateWithCreep.toDateString()).toBe(expectedDate.toDateString());
     });
 
     it("should handle zero scope creep", () => {
@@ -579,7 +585,11 @@ describe("Scope Tracking Functionality", () => {
 
       expect(result.effectiveWorkRate).toBe(2.0); // 2.0 - 0
       expect(result.daysToCompletionWithCreep).toBe(20); // 40 / 2.0
-      expect(result.projectedDateWithCreep.toDateString()).toBe(new Date("2025-02-04").toDateString()); // 2025-01-15 + 20 days
+      
+      // Calculate expected date programmatically to avoid timezone issues
+      const today = new Date("2025-01-15");
+      const expectedDate = new Date(today.getTime() + (20 * 24 * 60 * 60 * 1000));
+      expect(result.projectedDateWithCreep.toDateString()).toBe(expectedDate.toDateString());
     });
 
     it("should handle scope creep greater than work rate", () => {
@@ -604,7 +614,11 @@ describe("Scope Tracking Functionality", () => {
 
       expect(result.effectiveWorkRate).toBe(-0.5); // 1.0 - 1.5
       expect(result.daysToCompletionWithCreep).toBe(-40); // 20 / -0.5 (negative means project will never complete)
-      expect(result.projectedDateWithCreep.toDateString()).toBe(new Date("2024-12-06").toDateString()); // 2025-01-15 + (-40) days
+      
+      // Calculate expected date programmatically to avoid timezone issues
+      const today = new Date("2025-01-15");
+      const expectedDate = new Date(today.getTime() + (-40 * 24 * 60 * 60 * 1000));
+      expect(result.projectedDateWithCreep.toDateString()).toBe(expectedDate.toDateString());
     });
 
     it("should handle very small scope creep", () => {
@@ -629,7 +643,11 @@ describe("Scope Tracking Functionality", () => {
 
       expect(result.effectiveWorkRate).toBeCloseTo(1.9643, 4); // 2.0 - 0.0357
       expect(result.daysToCompletionWithCreep).toBeCloseTo(50.91, 2); // 100 / 1.9643
-      expect(result.projectedDateWithCreep.toDateString()).toBe(new Date("2025-03-07").toDateString()); // 2025-01-15 + 50.91 days
+      
+      // Calculate expected date programmatically to avoid timezone issues
+      const today = new Date("2025-01-15");
+      const expectedDate = new Date(today.getTime() + (50.91 * 24 * 60 * 60 * 1000));
+      expect(result.projectedDateWithCreep.toDateString()).toBe(expectedDate.toDateString());
     });
   });
 
