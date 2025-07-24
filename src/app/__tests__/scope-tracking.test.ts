@@ -470,6 +470,169 @@ describe("Scope Tracking Functionality", () => {
     });
   });
 
+  describe("Projected Finish Date with Scope Creep", () => {
+    const calculateProjectedFinishDateWithScopeCreep = (
+      projection: {
+        workRatePerDay: number;
+        remainingWork: number;
+        daysRemaining: number;
+        projectedFinishDate: Date;
+        earliestDate: Date;
+        latestDate: Date;
+      },
+      scopeCreep: {
+        scopeChange: number;
+        scopeChangePerDay: number;
+        comparisonDate: Date;
+        latestDate: Date;
+        daysBetween: number;
+      }
+    ) => {
+      // Calculate effective work rate with scope creep
+      const effectiveWorkRate = projection.workRatePerDay - scopeCreep.scopeChangePerDay;
+      
+      // Calculate days to completion with scope creep
+      const daysToCompletionWithCreep = projection.remainingWork / effectiveWorkRate;
+      
+      // Calculate projected finish date with scope creep (from today's date)
+      const today = new Date("2025-01-15"); // Mock today's date
+      const projectedDateWithCreep = new Date(today.getTime() + (daysToCompletionWithCreep * 24 * 60 * 60 * 1000));
+      
+      return {
+        effectiveWorkRate,
+        daysToCompletionWithCreep,
+        projectedDateWithCreep,
+      };
+    };
+
+    it("should calculate projected finish date with positive scope creep", () => {
+      const projection = {
+        workRatePerDay: 2.0,
+        remainingWork: 40,
+        daysRemaining: 20,
+        projectedFinishDate: new Date("2025-02-04"),
+        earliestDate: new Date("2025-01-01"),
+        latestDate: new Date("2025-01-15"),
+      };
+
+      const scopeCreep = {
+        scopeChange: 10,
+        scopeChangePerDay: 0.5, // Positive scope creep
+        comparisonDate: new Date("2025-01-01"),
+        latestDate: new Date("2025-01-15"),
+        daysBetween: 14,
+      };
+
+      const result = calculateProjectedFinishDateWithScopeCreep(projection, scopeCreep);
+
+      expect(result.effectiveWorkRate).toBe(1.5); // 2.0 - 0.5
+      expect(result.daysToCompletionWithCreep).toBeCloseTo(26.67, 2); // 40 / 1.5
+      // 26.67 days from 2025-01-15 = 2025-02-10 (26.67 * 24 hours = 640.08 hours, so 26 full days + 16 hours)
+      expect(result.projectedDateWithCreep.toDateString()).toBe(new Date("2025-02-11").toDateString());
+    });
+
+    it("should calculate projected finish date with negative scope creep (scope reduction)", () => {
+      const projection = {
+        workRatePerDay: 2.0,
+        remainingWork: 40,
+        daysRemaining: 20,
+        projectedFinishDate: new Date("2025-02-04"),
+        earliestDate: new Date("2025-01-01"),
+        latestDate: new Date("2025-01-15"),
+      };
+
+      const scopeCreep = {
+        scopeChange: -5,
+        scopeChangePerDay: -0.25, // Negative scope creep (scope reduction)
+        comparisonDate: new Date("2025-01-01"),
+        latestDate: new Date("2025-01-15"),
+        daysBetween: 14,
+      };
+
+      const result = calculateProjectedFinishDateWithScopeCreep(projection, scopeCreep);
+
+      expect(result.effectiveWorkRate).toBe(2.25); // 2.0 - (-0.25)
+      expect(result.daysToCompletionWithCreep).toBeCloseTo(17.78, 2); // 40 / 2.25
+      // 17.78 days from 2025-01-15 = 2025-02-02 (17.78 * 24 hours = 426.72 hours, so 17 full days + 18.72 hours)
+      expect(result.projectedDateWithCreep.toDateString()).toBe(new Date("2025-02-02").toDateString());
+    });
+
+    it("should handle zero scope creep", () => {
+      const projection = {
+        workRatePerDay: 2.0,
+        remainingWork: 40,
+        daysRemaining: 20,
+        projectedFinishDate: new Date("2025-02-04"),
+        earliestDate: new Date("2025-01-01"),
+        latestDate: new Date("2025-01-15"),
+      };
+
+      const scopeCreep = {
+        scopeChange: 0,
+        scopeChangePerDay: 0, // No scope creep
+        comparisonDate: new Date("2025-01-01"),
+        latestDate: new Date("2025-01-15"),
+        daysBetween: 14,
+      };
+
+      const result = calculateProjectedFinishDateWithScopeCreep(projection, scopeCreep);
+
+      expect(result.effectiveWorkRate).toBe(2.0); // 2.0 - 0
+      expect(result.daysToCompletionWithCreep).toBe(20); // 40 / 2.0
+      expect(result.projectedDateWithCreep.toDateString()).toBe(new Date("2025-02-04").toDateString()); // 2025-01-15 + 20 days
+    });
+
+    it("should handle scope creep greater than work rate", () => {
+      const projection = {
+        workRatePerDay: 1.0,
+        remainingWork: 20,
+        daysRemaining: 20,
+        projectedFinishDate: new Date("2025-02-04"),
+        earliestDate: new Date("2025-01-01"),
+        latestDate: new Date("2025-01-15"),
+      };
+
+      const scopeCreep = {
+        scopeChange: 15,
+        scopeChangePerDay: 1.5, // Scope creep greater than work rate
+        comparisonDate: new Date("2025-01-01"),
+        latestDate: new Date("2025-01-15"),
+        daysBetween: 14,
+      };
+
+      const result = calculateProjectedFinishDateWithScopeCreep(projection, scopeCreep);
+
+      expect(result.effectiveWorkRate).toBe(-0.5); // 1.0 - 1.5
+      expect(result.daysToCompletionWithCreep).toBe(-40); // 20 / -0.5 (negative means project will never complete)
+      expect(result.projectedDateWithCreep.toDateString()).toBe(new Date("2024-12-06").toDateString()); // 2025-01-15 + (-40) days
+    });
+
+    it("should handle very small scope creep", () => {
+      const projection = {
+        workRatePerDay: 2.0,
+        remainingWork: 100,
+        daysRemaining: 50,
+        projectedFinishDate: new Date("2025-03-06"),
+        earliestDate: new Date("2025-01-01"),
+        latestDate: new Date("2025-01-15"),
+      };
+
+      const scopeCreep = {
+        scopeChange: 0.5,
+        scopeChangePerDay: 0.0357, // Very small scope creep (0.5 over 14 days)
+        comparisonDate: new Date("2025-01-01"),
+        latestDate: new Date("2025-01-15"),
+        daysBetween: 14,
+      };
+
+      const result = calculateProjectedFinishDateWithScopeCreep(projection, scopeCreep);
+
+      expect(result.effectiveWorkRate).toBeCloseTo(1.9643, 4); // 2.0 - 0.0357
+      expect(result.daysToCompletionWithCreep).toBeCloseTo(50.91, 2); // 100 / 1.9643
+      expect(result.projectedDateWithCreep.toDateString()).toBe(new Date("2025-03-07").toDateString()); // 2025-01-15 + 50.91 days
+    });
+  });
+
   describe("Data Sorting and Merging", () => {
     it("should sort data by date correctly", () => {
       const unsortedData = [

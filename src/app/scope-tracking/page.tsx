@@ -487,6 +487,53 @@ export default function ScopeTrackingPage() {
               </div>
             )}
 
+            {/* Projected finish date with scope creep */}
+            {projection && scopeCreep && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <h3 className="text-lg font-semibold text-red-900 mb-2">
+                  Projected Finish Date with Scope Creep
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <p className="text-red-700 font-medium">Work Rate</p>
+                    <p className="text-red-900">{projection.workRatePerDay.toFixed(2)} days/day</p>
+                  </div>
+                  <div>
+                    <p className="text-red-700 font-medium">Scope Change Rate</p>
+                    <p className={`font-semibold ${scopeCreep.scopeChangePerDay >= 0 ? 'text-red-600' : 'text-green-600'}`}>
+                      {scopeCreep.scopeChangePerDay >= 0 ? '+' : ''}{scopeCreep.scopeChangePerDay.toFixed(2)} days/day
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-red-700 font-medium">Effective Work Rate with Scope Creep</p>
+                    <p className={`font-semibold ${(projection.workRatePerDay - scopeCreep.scopeChangePerDay) >= 0 ? 'text-red-600' : 'text-green-600'}`}>
+                      {(projection.workRatePerDay - scopeCreep.scopeChangePerDay).toFixed(2)} days/day
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-red-700 font-medium">Remaining Work</p>
+                    <p className="text-red-900">{projection.remainingWork.toFixed(1)} days</p>
+                  </div>
+                </div>
+                <div className="mt-4 p-3 bg-white border border-red-200 rounded-md">
+                  <div className="flex items-center justify-between">
+                    <span className="text-red-700 font-medium">Projected Finish Date with Scope Creep:</span>
+                    <span className="text-red-900 font-bold text-lg">
+                      {(() => {
+                        const effectiveWorkRate = projection.workRatePerDay - scopeCreep.scopeChangePerDay;
+                        const daysToCompletionWithCreep = projection.remainingWork / effectiveWorkRate;
+                        const projectedDateWithCreep = new Date(new Date().getTime() + (daysToCompletionWithCreep * 24 * 60 * 60 * 1000));
+                        return projectedDateWithCreep.toLocaleDateString();
+                      })()}
+                    </span>
+                  </div>
+                </div>
+                <div className="mt-2 text-xs text-red-600">
+                  Based on effective work rate (work rate - scope change rate) applied to remaining work
+                </div>
+              </div>
+            )}
+
             <div className="h-96">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData}>
