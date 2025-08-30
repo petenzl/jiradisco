@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { ListFilter } from "lucide-react";
 
 // utils
 import { Initiative, InitiativesForMonth } from "./types";
@@ -121,13 +122,113 @@ const calculateCumulativeData = (data: InitiativesForMonth[], teamCapacityPerMon
 
 const AllInitiativesView = ({
   initiatives,
-  teamCapacityPerMonth = 120,
+  teamCapacityPerMonth = 200,
   onBack,
 }: {
   initiatives: Initiative[];
   teamCapacityPerMonth?: number;
   onBack: () => void;
 }) => {
+  const [sortConfig, setSortConfig] = useState<{
+    key: keyof Initiative | null;
+    direction: 'asc' | 'desc';
+  }>({ key: null, direction: 'asc' });
+  
+  const [filters, setFilters] = useState<{
+    [key in keyof Initiative]?: string;
+  }>({});
+  
+  const [focusedInputs, setFocusedInputs] = useState<{
+    [key in keyof Initiative]?: boolean;
+  }>({});
+
+  const handleSort = (key: keyof Initiative) => {
+    setSortConfig(prev => ({
+      key,
+      direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
+    }));
+  };
+
+  const handleFilter = (key: keyof Initiative, value: string) => {
+    setFilters(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  const handleFocus = (key: keyof Initiative) => {
+    setFocusedInputs(prev => ({
+      ...prev,
+      [key]: true
+    }));
+  };
+
+  const handleBlur = (key: keyof Initiative) => {
+    setFocusedInputs(prev => ({
+      ...prev,
+      [key]: false
+    }));
+  };
+
+  const filteredAndSortedInitiatives = initiatives
+    .filter(initiative => {
+      return Object.entries(filters).every(([key, filterValue]) => {
+        if (!filterValue) return true;
+        const initiativeValue = initiative[key as keyof Initiative];
+        
+        // For numeric fields that are displayed as rounded values
+        if (key === 'doneWork' || key === 'workDays' || key === 'totalWork') {
+          const roundedValue = Math.round(initiativeValue as number);
+          return String(roundedValue).includes(filterValue);
+        }
+        
+        // For date fields, convert to formatted string for filtering
+        if (key === 'targetDate' || key === 'projectedFinishDate') {
+          const dateValue = new Date(initiativeValue as string);
+          const formattedDate = format(dateValue, "MMM d, yy");
+          const matches = formattedDate.toLowerCase().includes(filterValue.toLowerCase());
+          console.log(`Filtering ${key}: "${formattedDate}" includes "${filterValue}" = ${matches}`);
+          return matches;
+        }
+        
+        if (typeof initiativeValue === 'string') {
+          return initiativeValue.toLowerCase().includes(filterValue.toLowerCase());
+        }
+        if (typeof initiativeValue === 'number') {
+          return String(initiativeValue).includes(filterValue);
+        }
+        return true;
+      });
+    })
+    .sort((a, b) => {
+      if (!sortConfig.key) return 0;
+      
+      const aValue = a[sortConfig.key];
+      const bValue = b[sortConfig.key];
+      
+      // Handle date fields
+      if (sortConfig.key === 'targetDate' || sortConfig.key === 'projectedFinishDate') {
+        const aDate = new Date(aValue as string);
+        const bDate = new Date(bValue as string);
+        return sortConfig.direction === 'asc' 
+          ? aDate.getTime() - bDate.getTime()
+          : bDate.getTime() - aDate.getTime();
+      }
+      
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortConfig.direction === 'asc' 
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+      
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return sortConfig.direction === 'asc' 
+          ? aValue - bValue
+          : bValue - aValue;
+      }
+      
+      return 0;
+    });
   const totalOnTrackStatusInDays = initiatives.reduce(
     (acc, initiative) => acc + (initiative.onTrackStatus || 0),
     0
@@ -238,74 +339,358 @@ const AllInitiativesView = ({
             <tr>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 relative h-32"
+                onClick={() => handleSort('name')}
               >
-                Initiative Name
+                <div className="absolute bottom-10 left-6 right-6">
+                  <div className="flex items-center justify-between">
+                    <span>Initiative Name</span>
+                    {sortConfig.key === 'name' && (
+                      <span className="ml-1">
+                        {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="absolute bottom-2 left-6 right-6">
+                  <input
+                    type="text"
+                    placeholder="Filter..."
+                    className="w-full min-w-[60px] px-2 py-1 text-xs border border-gray-300 rounded h-6"
+                    value={filters.name || ''}
+                    onChange={(e) => handleFilter('name', e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </div>
               </th>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 relative h-32"
+                onClick={() => handleSort('status')}
               >
-                Status
+                <div className="absolute bottom-10 left-6 right-6">
+                  <div className="flex items-center justify-between">
+                    <span>Status</span>
+                    {sortConfig.key === 'status' && (
+                      <span className="ml-1">
+                        {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="absolute bottom-2 left-6 right-6">
+                  <input
+                    type="text"
+                    placeholder="Filter..."
+                    className="w-full min-w-[60px] px-2 py-1 text-xs border border-gray-300 rounded h-6"
+                    value={filters.status || ''}
+                    onChange={(e) => handleFilter('status', e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </div>
               </th>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 relative h-32"
+                onClick={() => handleSort('doneWork')}
               >
-                Work Done
+                <div className="absolute bottom-10 left-6 right-6">
+                  <div className="flex items-center justify-between">
+                    <span>Work Done</span>
+                    {sortConfig.key === 'doneWork' && (
+                      <span className="ml-1">
+                        {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="absolute bottom-2 left-6 right-6">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      className={`w-full min-w-[40px] max-w-[60px] py-1 text-xs border border-gray-300 rounded h-6 ${
+                        focusedInputs.doneWork ? 'pl-2 pr-2' : 'pl-6 pr-2'
+                      }`}
+                      value={filters.doneWork || ''}
+                      onChange={(e) => handleFilter('doneWork', e.target.value)}
+                      onFocus={() => handleFocus('doneWork')}
+                      onBlur={() => handleBlur('doneWork')}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    {!focusedInputs.doneWork && (
+                      <ListFilter className="absolute left-1 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400" />
+                    )}
+                  </div>
+                </div>
               </th>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 relative h-32"
+                onClick={() => handleSort('workDays')}
               >
-                Work Due
+                <div className="absolute bottom-10 left-6 right-6">
+                  <div className="flex items-center justify-between">
+                    <span>Work Due</span>
+                    {sortConfig.key === 'workDays' && (
+                      <span className="ml-1">
+                        {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="absolute bottom-2 left-6 right-6">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      className={`w-full min-w-[40px] max-w-[60px] py-1 text-xs border border-gray-300 rounded h-6 ${
+                        focusedInputs.workDays ? 'pl-2 pr-2' : 'pl-6 pr-2'
+                      }`}
+                      value={filters.workDays || ''}
+                      onChange={(e) => handleFilter('workDays', e.target.value)}
+                      onFocus={() => handleFocus('workDays')}
+                      onBlur={() => handleBlur('workDays')}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    {!focusedInputs.workDays && (
+                      <ListFilter className="absolute left-1 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400" />
+                    )}
+                  </div>
+                </div>
               </th>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 relative h-32"
+                onClick={() => handleSort('totalWork')}
               >
-                Total Work
+                <div className="absolute bottom-10 left-6 right-6">
+                  <div className="flex items-center justify-between">
+                    <span>Total Work</span>
+                    {sortConfig.key === 'totalWork' && (
+                      <span className="ml-1">
+                        {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="absolute bottom-2 left-6 right-6">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      className={`w-full min-w-[40px] max-w-[60px] py-1 text-xs border border-gray-300 rounded h-6 ${
+                        focusedInputs.totalWork ? 'pl-2 pr-2' : 'pl-6 pr-2'
+                      }`}
+                      value={filters.totalWork || ''}
+                      onChange={(e) => handleFilter('totalWork', e.target.value)}
+                      onFocus={() => handleFocus('totalWork')}
+                      onBlur={() => handleBlur('totalWork')}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    {!focusedInputs.totalWork && (
+                      <ListFilter className="absolute left-1 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400" />
+                    )}
+                  </div>
+                </div>
               </th>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 relative h-32"
+                onClick={() => handleSort('percentComplete')}
               >
-                % Complete
+                <div className="absolute bottom-10 left-6 right-6">
+                  <div className="flex items-center justify-between">
+                    <span>% Complete</span>
+                    {sortConfig.key === 'percentComplete' && (
+                      <span className="ml-1">
+                        {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="absolute bottom-2 left-6 right-6">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      className={`w-full min-w-[40px] max-w-[60px] py-1 text-xs border border-gray-300 rounded h-6 ${
+                        focusedInputs.percentComplete ? 'pl-2 pr-2' : 'pl-6 pr-2'
+                      }`}
+                      value={filters.percentComplete || ''}
+                      onChange={(e) => handleFilter('percentComplete', e.target.value)}
+                      onFocus={() => handleFocus('percentComplete')}
+                      onBlur={() => handleBlur('percentComplete')}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    {!focusedInputs.percentComplete && (
+                      <ListFilter className="absolute left-1 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400" />
+                    )}
+                  </div>
+                </div>
               </th>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 relative h-32"
+                onClick={() => handleSort('expectedCompletion')}
               >
-                % Expected Complete
+                <div className="absolute bottom-10 left-6 right-6">
+                  <div className="flex items-center justify-between">
+                    <span>% Expected Complete</span>
+                    {sortConfig.key === 'expectedCompletion' && (
+                      <span className="ml-1">
+                        {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="absolute bottom-2 left-6 right-6">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      className={`w-full min-w-[40px] max-w-[60px] py-1 text-xs border border-gray-300 rounded h-6 ${
+                        focusedInputs.expectedCompletion ? 'pl-2 pr-2' : 'pl-6 pr-2'
+                      }`}
+                      value={filters.expectedCompletion || ''}
+                      onChange={(e) => handleFilter('expectedCompletion', e.target.value)}
+                      onFocus={() => handleFocus('expectedCompletion')}
+                      onBlur={() => handleBlur('expectedCompletion')}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    {!focusedInputs.expectedCompletion && (
+                      <ListFilter className="absolute left-1 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400" />
+                    )}
+                  </div>
+                </div>
               </th>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 relative h-32"
+                onClick={() => handleSort('targetDate')}
               >
-                Target Finish Date
+                <div className="absolute bottom-10 left-6 right-6">
+                  <div className="flex items-center justify-between">
+                    <span>Target Finish Date</span>
+                    {sortConfig.key === 'targetDate' && (
+                      <span className="ml-1">
+                        {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="absolute bottom-2 left-6 right-6">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      className={`w-full min-w-[40px] max-w-[60px] py-1 text-xs border border-gray-300 rounded h-6 ${
+                        focusedInputs.targetDate ? 'pl-2 pr-2' : 'pl-6 pr-2'
+                      }`}
+                      value={filters.targetDate || ''}
+                      onChange={(e) => handleFilter('targetDate', e.target.value)}
+                      onFocus={() => handleFocus('targetDate')}
+                      onBlur={() => handleBlur('targetDate')}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    {!focusedInputs.targetDate && (
+                      <ListFilter className="absolute left-1 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400" />
+                    )}
+                  </div>
+                </div>
               </th>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 relative h-32"
+                onClick={() => handleSort('projectedFinishDate')}
               >
-                Projected Finish Date
+                <div className="absolute bottom-10 left-6 right-6">
+                  <div className="flex items-center justify-between">
+                    <span>Projected Finish Date</span>
+                    {sortConfig.key === 'projectedFinishDate' && (
+                      <span className="ml-1">
+                        {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="absolute bottom-2 left-6 right-6">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      className={`w-full min-w-[40px] max-w-[60px] py-1 text-xs border border-gray-300 rounded h-6 ${
+                        focusedInputs.projectedFinishDate ? 'pl-2 pr-2' : 'pl-6 pr-2'
+                      }`}
+                      value={filters.projectedFinishDate || ''}
+                      onChange={(e) => handleFilter('projectedFinishDate', e.target.value)}
+                      onFocus={() => handleFocus('projectedFinishDate')}
+                      onBlur={() => handleBlur('projectedFinishDate')}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    {!focusedInputs.projectedFinishDate && (
+                      <ListFilter className="absolute left-1 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400" />
+                    )}
+                  </div>
+                </div>
               </th>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 relative h-32"
+                onClick={() => handleSort('onTrackStatus')}
               >
-                On track / Off track (days)
+                <div className="absolute bottom-10 left-6 right-6">
+                  <div className="flex items-center justify-between">
+                    <span>On track / Off track (days)</span>
+                    {sortConfig.key === 'onTrackStatus' && (
+                      <span className="ml-1">
+                        {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="absolute bottom-2 left-6 right-6">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      className={`w-full min-w-[40px] max-w-[60px] py-1 text-xs border border-gray-300 rounded h-6 ${
+                        focusedInputs.onTrackStatus ? 'pl-2 pr-2' : 'pl-6 pr-2'
+                      }`}
+                      value={filters.onTrackStatus || ''}
+                      onChange={(e) => handleFilter('onTrackStatus', e.target.value)}
+                      onFocus={() => handleFocus('onTrackStatus')}
+                      onBlur={() => handleBlur('onTrackStatus')}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    {!focusedInputs.onTrackStatus && (
+                      <ListFilter className="absolute left-1 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400" />
+                    )}
+                  </div>
+                </div>
               </th>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 relative h-32"
+                onClick={() => handleSort('customer')}
               >
-                Customer
+                <div className="absolute bottom-10 left-6 right-6">
+                  <div className="flex items-center justify-between">
+                    <span>Customer</span>
+                    {sortConfig.key === 'customer' && (
+                      <span className="ml-1">
+                        {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="absolute bottom-2 left-6 right-6">
+                  <input
+                    type="text"
+                    placeholder="Filter..."
+                    className="w-full min-w-[60px] px-2 py-1 text-xs border border-gray-300 rounded h-6"
+                    value={filters.customer || ''}
+                    onChange={(e) => handleFilter('customer', e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </div>
               </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {initiatives.map((initiative) => (
+            {filteredAndSortedInitiatives.map((initiative) => (
               <tr key={initiative.name}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                   {initiative.name}
@@ -541,7 +926,7 @@ function JiraCapacityPlanner() {
   const [page, setPage] = useState("home");
   const [allInitiatives, setAllInitiatives] = useState<Initiative[]>([]);
 
-  const TEAM_CAPACITY_PER_MONTH = 120;
+  const TEAM_CAPACITY_PER_MONTH = 200;
 
   type BarClickData = {
     activePayload?: Array<{ payload: InitiativesForMonth }>;
@@ -622,7 +1007,7 @@ function JiraCapacityPlanner() {
               </h1>
               <p className="mt-2 text-lg text-gray-600">
                 Visualize your team&apos;s monthly workload against its capacity
-                (120 days per month).
+                (200 days per month).
               </p>
             </div>
             <Link href="/scope-tracking">
@@ -751,6 +1136,7 @@ function JiraCapacityPlanner() {
                             style: { textAnchor: "middle" },
                           }}
                           tick={{ fontSize: 12 }}
+                          domain={[0, Math.max(250, TEAM_CAPACITY_PER_MONTH + 50)]}
                         />
                         <Tooltip
                           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -774,6 +1160,7 @@ function JiraCapacityPlanner() {
                             fontWeight: "bold",
                           }}
                           stroke="#16a34a"
+                          strokeWidth={2}
                           strokeDasharray="4 4"
                         />
                         <Bar
