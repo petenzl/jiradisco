@@ -318,7 +318,7 @@ describe("Filtering and Sorting Functionality", () => {
     });
 
     test("should handle null/undefined filter values", () => {
-      const filters = { name: "", status: null as string | null };
+      const filters = { name: "", status: undefined as string | undefined };
       const result = filterInitiatives(mockInitiatives, filters);
       expect(result).toHaveLength(4); // Should return all initiatives
     });
